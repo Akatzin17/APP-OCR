@@ -21,10 +21,9 @@ Uint8List _convertToGrayscale(String path) {
   final processed = img.adjustColor(
     grayscale,
     contrast: 1.4, // Ajusta el contraste para mejorar la detección de tintas
-    gamma:
-        1.4, // Ajusta el gamma para mejorar la visibilidad (1.5 para oscurecer o < 1.0 para aclarar)
-    brightness: 1.0,
-  ); // Ajusta el brillo si es necesario (-1.0 oscuro total, 0.0 sin cambio, 1.0 brillante total)
+    gamma:1.4, // Ajusta el gamma para mejorar la visibilidad (1.5 para oscurecer o < 1.0 para aclarar)
+    brightness: 1.0, // Ajusta el brillo si es necesario (-1.0 oscuro total, 0.0 sin cambio, 1.0 brillante total)
+  ); 
 
   return img.encodeJpg(processed, quality: 90);
 }

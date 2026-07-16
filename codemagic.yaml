@@ -10,11 +10,14 @@ workflows:
     triggering:
       events: []
     scripts:
+      - name: Obtener dependencias y autogenerar archivos de entorno iOS
+        script: |
+          flutter pub get
+          # Este comando genera los scripts de entorno nativos (como flutter_export_environment.sh) en el servidor
+          flutter build ios --config-only
       - name: Instalar dependencias nativas (Pod install)
         script: |
-          # Activamos el uso de CDN de forma global para CocoaPods sin alterar el Podfile
           export COCOAPODS_DISABLE_STATS=true
-          
           cd ios
           pod repo remove master || true
           pod install --repo-update

@@ -1,45 +1,20 @@
 platform :ios, '13.0'
 
-# Asegura el aislamiento de analíticas de CocoaPods
-ENV['COCOAPODS_DISABLE_STATS'] = 'true'
-
-project 'Runner', {
-  'Debug' => :debug,
-  'Profile' => :profile,
-  'Release' => :release,
-}
-
-def flutter_root
-  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'generated_xcode_build_settings.mgmt'), __FILE__)
-  unless File.exist?(generated_xcode_build_settings_path)
-    raise "generated_xcode_build_settings.mgmt must exist. If you're running pod install manually, make sure flutter pub get executes successfully first."
-  end
-
-  File.foreach(generated_xcode_build_settings_path) do |line|
-    matches = line.match(/FLUTTER_ROOT=(.*)/)
-    return matches[1].strip if matches
-  end
-  raise "FLUTTER_ROOT not found in generated_xcode_build_settings.mgmt."
-end
-
-require File.expand_path(File.join('..', 'Flutter', 'flutter_export_environment.sh'), __FILE__) rescue nil
-
-# Carga las funciones nativas del motor de Flutter
-load File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
+use_frameworks!
+use_modular_headers!
 
 target 'Runner' do
-  use_frameworks!
-  use_modular_headers!
-
-  flutter_install_all_ios_pods File.dirname(__FILE__)
+  # Aquí se inyectan dinámicamente los plugins de Flutter en la compilación remota
+  pod_helpers_path = File.join(File.dirname(__FILE__), '.symlinks', 'plugins', 'flutter_plugin_loader', 'ios', 'podhelper.rb')
+  if File.exist?(pod_helpers_path)
+    eval(File.read(pod_helpers_path), binding, pod_helpers_path)
+  end
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    flutter_additional_ios_build_settings(target)
-    
-    # Forzar la compatibilidad estricta con iOS 13.0 para todas las dependencias
     target.build_configurations.each do |config|
+      # Forzamos a que todos los pods de Google MLKit y tu app usen iOS 13
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
     end
   end

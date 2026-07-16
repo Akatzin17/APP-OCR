@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
 //URL como variable global
-const String kBaseUrl = 'http://IP DEL SERVIDOR/';
+const String kBaseUrl = 'http://192.168.0.6:8084/';
 
 class ResultPage extends StatefulWidget {
   const ResultPage({super.key, this.text = ''});

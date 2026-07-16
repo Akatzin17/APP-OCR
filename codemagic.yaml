@@ -12,11 +12,10 @@ workflows:
     scripts:
       - name: Obtener dependencias y autogenerar archivos de entorno iOS
         script: |
-          # Limpiar caché previo para evitar conflictos
           flutter clean
           flutter pub get
-          # Generar los scripts de entorno nativos de forma limpia
-          flutter build ios --config-only
+          # Forzamos a que configure únicamente el entorno de Debug sin requerir firmas
+          flutter build ios --config-only --debug --no-codesign
       - name: Instalar dependencias nativas (Pod install)
         script: |
           export COCOAPODS_DISABLE_STATS=true

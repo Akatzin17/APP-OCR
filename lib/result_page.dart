@@ -282,7 +282,7 @@ class _ResultPageState extends State<ResultPage> {
                     children: <Widget>[
                       for (var i = 0; i < longitud; i++)
                         ListTile(
-                          title: Text('SKU: ${data['data'][i]['SKU']}'),
+                          title: Text('SKU: ${data['data'][i] ['SKU']}'),
                           subtitle: Text(
                             'Descripción: ${data['data'][i]['Descripcion']}',
                           ),

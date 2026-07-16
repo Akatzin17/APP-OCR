@@ -10,15 +10,15 @@ workflows:
     triggering:
       events: []
     scripts:
-      - name: Configurar CocoaPods y evitar congelamiento
-        script: |
-          pod repo remove master || true
-          echo "source 'https://cdn.cocoapods.org/'" > ios/Podfile.tmp
-          cat ios/Podfile >> ios/Podfile.tmp
-          mv ios/Podfile.tmp ios/Podfile
       - name: Instalar dependencias nativas (Pod install)
         script: |
-          cd ios && pod install --repo-update && cd ..
+          # Activamos el uso de CDN de forma global para CocoaPods sin alterar el Podfile
+          export COCOAPODS_DISABLE_STATS=true
+          
+          cd ios
+          pod repo remove master || true
+          pod install --repo-update
+          cd ..
       - name: Compilar Flutter para iOS (Debug)
         script: |
           flutter build ios --debug --no-codesign

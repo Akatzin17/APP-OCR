@@ -1,50 +1,23 @@
 platform :ios, '13.0'
 
-# CocoaPods analytics are disabled by default.
-ENV['COCOAPODS_DISABLE_STATS'] = 'true'
-
-project 'Runner', {
-  'Debug' => :debug,
-  'Profile' => :profile,
-  'Release' => :release,
-}
-
-def flutter_install_all_ios_pods(chunks)
-  keep_path = false
-  if !chunks.empty? && chunks[0] == :path
-    keep_path = true
-    chunks.shift
-  end
-
-  chunks.each do |target_name|
-    target target_name do
-      use_frameworks!
-      use_modular_headers!
-
-      flutter_install_ios_engine_pods(parent_target_dir: File.dirname(__FILE__))
-
-      # Encuentra e instala de manera automática los plugins de Flutter (como google_mlkit)
-      pod_helpers_path = File.join(File.dirname(__FILE__), '.symlinks', 'plugins', 'flutter_plugin_loader', 'ios', 'podhelper.rb')
-      if File.exist?(pod_helpers_path)
-        eval(File.read(pod_helpers_path), binding, pod_helpers_path)
-        flutter_install_all_ios_pods(keep_path ? [:path] : [])
-      end
-    end
-  end
-end
-
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-  flutter_install_all_ios_pods([:path, 'Runner'])
+  # Carga dinámica nativa de los plugins de Flutter
+  pod_helpers_path = File.join(File.dirname(__FILE__), '.symlinks', 'plugins', 'flutter_plugin_loader', 'ios', 'podhelper.rb')
+  if File.exist?(pod_helpers_path)
+    eval(File.read(pod_helpers_path), binding, pod_helpers_path)
+  end
+  
+  flutter_ios_podfile_setup if respond_to?(:flutter_ios_podfile_setup)
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    flutter_additional_ios_build_settings(target)
+    flutter_additional_ios_build_settings(target) if respond_to?(:flutter_additional_ios_build_settings)
     
-    # Asegura que todos los pods compilen apuntando a iOS 13.0
+    # Forzar a todas las dependencias OCR a compilar bajo la misma versión de iOS
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
     end

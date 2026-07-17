@@ -1,6 +1,5 @@
 platform :ios, '13.0'
 
-# Asegura el aislamiento de analíticas de CocoaPods
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 project 'Runner', {
@@ -11,53 +10,32 @@ project 'Runner', {
 
 def flutter_root
   generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'generated_xcode_build_settings.mgmt'), __FILE__)
-  
-  # Si el archivo aún no se crea, retornamos un string vacío temporalmente
-  # para que CocoaPods no truene durante la fase inicial de generación.
   unless File.exist?(generated_xcode_build_settings_path)
-    return ""
+    raise "generated_xcode_build_settings.mgmt must exist. If you're running pod install manually, make sure flutter pub get executes successfully first."
   end
 
   File.foreach(generated_xcode_build_settings_path) do |line|
     matches = line.match(/FLUTTER_ROOT=(.*)/)
     return matches[1].strip if matches
   end
-  ""
+  raise "FLUTTER_ROOT not found in generated_xcode_build_settings.mgmt."
 end
 
-# Carga de manera segura el script de entorno si existe
-flutter_env_path = File.expand_path(File.join('..', 'Flutter', 'flutter_export_environment.sh'), __FILE__)
-if File.exist?(flutter_env_path)
-  require flutter_env_path rescue nil
-end
+require File.expand_path(File.join('..', 'Flutter', 'flutter_export_environment.sh'), __FILE__) rescue nil
 
-# Intentamos cargar las herramientas de podhelper de Flutter solo si encontramos la ruta válida
-f_root = flutter_root
-if f_root != ""
-  podhelper_path = File.join(f_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
-  if File.exist?(podhelper_path)
-    load podhelper_path
-  end
-end
+load File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
 
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-  # Ejecuta la instalación de pods nativos si ya está configurado el helper de Flutter
-  if respond_to?(:flutter_install_all_ios_pods)
-    flutter_install_all_ios_pods File.dirname(__FILE__)
-  end
+  flutter_install_all_ios_pods File.dirname(__FILE__)
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    # Aplica las configuraciones de Flutter solo si el método está disponible en el entorno actual
-    if respond_to?(:flutter_additional_ios_build_settings)
-      flutter_additional_ios_build_settings(target)
-    end
+    flutter_additional_ios_build_settings(target)
     
-    # Forzar la compatibilidad con iOS 13.0 para todas las dependencias nativas (incluyendo Google ML Kit)
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
     end

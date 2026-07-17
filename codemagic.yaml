@@ -12,21 +12,8 @@ workflows:
     scripts:
       - name: Obtener dependencias y autogenerar archivos de entorno iOS
         script: |
-          # 1. Limpieza y dependencias de Flutter
           flutter clean
           flutter pub get
-          
-          # 2. Creamos la carpeta físicamente en la Mac de Codemagic
-          mkdir -p ios/Flutter
-          
-          # 3. Escribimos código real de Bash dentro de los archivos para que NO estén vacíos
-          # y CocoaPods los pueda importar sin mandar errores de archivo corrupto o ausente.
-          echo "#!/bin/sh" > ios/Flutter/flutter_export_environment.sh
-          echo "export \"FLUTTER_ROOT=.\"" >> ios/Flutter/flutter_export_environment.sh
-          
-          echo "FLUTTER_ROOT=." > ios/Flutter/generated_xcode_build_settings.mgmt
-          
-          # 4. Ahora sí, autogeneramos las configuraciones reales sobreescribiendo los placeholders
           flutter build ios --config-only --debug --no-codesign
       - name: Instalar dependencias nativas (Pod install)
         script: |

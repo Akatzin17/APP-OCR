@@ -1,22 +1,14 @@
 platform :ios, '15.5'
 
-project 'Runner', {
-  'Debug' => :debug,
-  'Profile' => :profile,
-  'Release' => :release,
-}
-
 def flutter_root
-  # 1. Intentamos buscar el archivo de configuración moderno (.xcconfig) o el clásico (.mgmt)
   generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
   legacy_settings_path = File.expand_path(File.join('..', 'Flutter', 'generated_xcode_build_settings.mgmt'), __FILE__)
   
   target_path = File.exist?(generated_xcode_build_settings_path) ? generated_xcode_build_settings_path : legacy_settings_path
 
   unless File.exist?(target_path)
-    # Si no existe ninguno, mostramos una advertencia pero intentamos usar la ruta por defecto de Flutter
     puts "Warning: No se encontró archivo de configuración en Flutter/. Usando fallback."
-    return File.expand_path(File.join('..', '..', '..'), __FILE__) # Intenta subir al SDK de Flutter global si aplica
+    return File.expand_path(File.join('..', '..', '..'), __FILE__)
   end
 
   File.foreach(target_path) do |line|
@@ -29,7 +21,6 @@ end
 # Cargamos el helper nativo de Flutter
 podhelper_path = File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
 unless File.exist?(podhelper_path)
-  # Fallback definitivo: Si falla el parser manual, usamos el cargador estándar de Flutter
   podhelper_path = File.expand_path(File.join('..', 'Flutter', 'podhelper.rb'), __FILE__)
 end
 
@@ -40,7 +31,7 @@ else
 end
 
 target 'Runner' do
-  # Modificación clave: Permitir compatibilidad con frameworks estáticos transitivos
+  # Mantenemos el enlace estático para evitar el error anterior de dependencias transitivas
   use_frameworks! :linkage => :static
   use_modular_headers!
 

@@ -1,5 +1,6 @@
 platform :ios, '13.0'
 
+# Desactiva estadísticas de CocoaPods para acelerar la compilación
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 project 'Runner', {
@@ -8,61 +9,39 @@ project 'Runner', {
   'Release' => :release,
 }
 
+# Carga el entorno de exportación de Flutter (se generará automáticamente en el servidor)
+require File.expand_path(File.join('..', 'Flutter', 'flutter_export_environment.sh'), __FILE__)
+
+# Obtiene la ruta del SDK de Flutter
 def flutter_root
   generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'generated_xcode_build_settings.mgmt'), __FILE__)
-  
-  # Si el archivo de configuración no existe todavía, devolvemos un placeholder
-  # para evitar que CocoaPods truene en la fase previa
   unless File.exist?(generated_xcode_build_settings_path)
-    return File.expand_path(File.join('..', '..', '..'), __FILE__) # Apunta temporalmente al SDK local si es necesario
+    raise "generated_xcode_build_settings.mgmt must exist. If you're running pod install manually, make sure flutter pub get executes successfully first."
   end
 
   File.foreach(generated_xcode_build_settings_path) do |line|
     matches = line.match(/FLUTTER_ROOT=(.*)/)
     return matches[1].strip if matches
   end
-  "."
+  raise "FLUTTER_ROOT not found in generated_xcode_build_settings.mgmt."
 end
 
-# TRUCO DE INMUNIDAD: Intentamos cargar el archivo. Si falla o no existe, 
-# evitamos que CocoaPods aborte la ejecución del script.
-flutter_export_script = File.expand_path(File.join('..', 'Flutter', 'flutter_export_environment.sh'), __FILE__)
-if File.exist?(flutter_export_script)
-  begin
-    load flutter_export_script
-  rescue => e
-    puts "Advertencia: No se pudo cargar flutter_export_environment.sh de forma estricta: #{e.message}"
-  end
-else
-  puts "Advertencia: flutter_export_environment.sh no existe en esta fase. Continuando de todos modos..."
-end
-
-# Carga de las herramientas nativas de Flutter de forma segura
-f_root = flutter_root
-podhelper_path = File.join(f_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
-
-if File.exist?(podhelper_path)
-  load podhelper_path
-else
-  puts "Advertencia: podhelper.rb no encontrado en la ruta temporal. Se generará en el build."
-end
+# Carga las herramientas de CocoaPods de Flutter
+load File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
 
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-  # Solo intentamos instalar si el helper ya fue cargado con éxito por Flutter
-  if respond_to?(:flutter_install_all_ios_pods)
-    flutter_install_all_ios_pods File.dirname(__FILE__)
-  end
+  # Instala todas las dependencias del pubspec.yaml automáticamente
+  flutter_install_all_ios_pods File.dirname(__FILE__)
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    if respond_to?(:flutter_additional_ios_build_settings)
-      flutter_additional_ios_build_settings(target)
-    end
+    flutter_additional_ios_build_settings(target)
     
+    # Forzar iOS 13.0 para compatibilidad de dependencias
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
     end

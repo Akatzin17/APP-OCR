@@ -10,7 +10,15 @@ project 'Runner', {
 }
 
 # Carga el entorno de exportación de Flutter (se generará automáticamente en el servidor)
-require File.expand_path(File.join('..', 'Flutter', 'flutter_export_environment.sh'), __FILE__) rescue nil
+flutter_export_script = File.expand_path(File.join('..', 'Flutter', 'flutter_export_environment.sh'), __FILE__)
+if File.exist?(flutter_export_script)
+  # Usamos 'load' en lugar de 'require' para evitar que Ruby intente compilar el .sh de manera estricta
+  begin
+    load flutter_export_script
+  rescue => e
+    # Si hay algún problema interno al parsear, lo ignoramos para no tirar la build
+  end
+end
 
 # Obtiene la ruta del SDK de Flutter
 def flutter_root

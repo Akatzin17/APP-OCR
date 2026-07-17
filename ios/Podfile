@@ -1,6 +1,5 @@
 platform :ios, '13.0'
 
-# Eliminamos la línea de import/require problematica del .sh
 project 'Runner', {
   'Debug' => :debug,
   'Profile' => :profile,
@@ -8,24 +7,37 @@ project 'Runner', {
 }
 
 def flutter_root
-  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'generated_xcode_build_settings.mgmt'), __FILE__)
-  unless File.exist?(generated_xcode_build_settings_path)
-    raise "generated_xcode_build_settings.mgmt must exist. If you're running pod install manually, make sure flutter pub get executes successfully first."
+  # 1. Intentamos buscar el archivo de configuración moderno (.xcconfig) o el clásico (.mgmt)
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  legacy_settings_path = File.expand_path(File.join('..', 'Flutter', 'generated_xcode_build_settings.mgmt'), __FILE__)
+  
+  target_path = File.exist?(generated_xcode_build_settings_path) ? generated_xcode_build_settings_path : legacy_settings_path
+
+  unless File.exist?(target_path)
+    # Si no existe ninguno, mostramos una advertencia pero intentamos usar la ruta por defecto de Flutter
+    puts "Warning: No se encontró archivo de configuración en Flutter/. Usando fallback."
+    return File.expand_path(File.join('..', '..', '..'), __FILE__) # Intenta subir al SDK de Flutter global si aplica
   end
 
-  File.foreach(generated_xcode_build_settings_path) do |line|
+  File.foreach(target_path) do |line|
     matches = line.match(/FLUTTER_ROOT=(.*)/)
     return matches[1].strip if matches
   end
-  raise "FLUTTER_ROOT not found in generated_xcode_build_settings.mgmt"
+  raise "FLUTTER_ROOT no encontrado en el archivo de configuración nativo."
 end
 
 # Cargamos el helper nativo de Flutter
 podhelper_path = File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
 unless File.exist?(podhelper_path)
-  raise "podhelper.rb not found at #{podhelper_path}"
+  # Fallback definitivo: Si falla el parser manual, usamos el cargador estándar de Flutter
+  podhelper_path = File.expand_path(File.join('..', 'Flutter', 'podhelper.rb'), __FILE__)
 end
-load podhelper_path
+
+if File.exist?(podhelper_path)
+  load podhelper_path
+else
+  raise "No se pudo localizar podhelper.rb. Asegúrate de ejecutar flutter pub get."
+end
 
 target 'Runner' do
   use_frameworks!
@@ -38,7 +50,6 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     
-    # Aseguramos compatibilidad iOS 13.0 para ML Kit y tus librerías de permisos
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
     end

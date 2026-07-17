@@ -10,7 +10,7 @@ project 'Runner', {
 }
 
 # Carga el entorno de exportación de Flutter (se generará automáticamente en el servidor)
-require File.expand_path(File.join('..', 'Flutter', 'flutter_export_environment.sh'), __FILE__)
+require File.expand_path(File.join('..', 'Flutter', 'flutter_export_environment.sh'), __FILE__) rescue nil
 
 # Obtiene la ruta del SDK de Flutter
 def flutter_root

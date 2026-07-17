@@ -15,12 +15,15 @@ workflows:
           flutter clean
           flutter pub get
           
-          # TRUCO: Creamos la carpeta y un archivo vacío temporal en la Mac de Codemagic
+          # Creamos la carpeta de destino
           mkdir -p ios/Flutter
-          touch ios/Flutter/flutter_export_environment.sh
-          touch ios/Flutter/generated_xcode_build_settings.mgmt
           
-          # Ahora Flutter actualizará estos archivos con las rutas de macOS sin que CocoaPods proteste
+          # TRUCO MAESTRO: Escribimos un comentario básico en los archivos temporales 
+          # para que Ruby/CocoaPods los acepte y no los trate como archivos corruptos.
+          echo "# Placeholder" > ios/Flutter/flutter_export_environment.sh
+          echo "FLUTTER_ROOT=." > ios/Flutter/generated_xcode_build_settings.mgmt
+          
+          # Ahora Flutter actualizará estos archivos con las rutas reales de macOS
           flutter build ios --config-only --debug --no-codesign
       - name: Instalar dependencias nativas (Pod install)
         script: |

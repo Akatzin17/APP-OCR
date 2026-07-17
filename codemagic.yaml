@@ -10,20 +10,11 @@ workflows:
     triggering:
       events: []
     scripts:
-      - name: Obtener dependencias y autogenerar archivos de entorno iOS
+      - name: Compilar Aplicación iOS (Debug)
         script: |
           flutter clean
           flutter pub get
-          flutter build ios --config-only --debug --no-codesign
-      - name: Instalar dependencias nativas (Pod install)
-        script: |
-          export COCOAPODS_DISABLE_STATS=true
-          cd ios
-          pod repo remove master || true
-          pod install --repo-update
-          cd ..
-      - name: Compilar Flutter para iOS (Debug)
-        script: |
+          # Este comando genera los entornos de forma nativa en la Mac y ejecuta su propio 'pod install' internamente
           flutter build ios --debug --no-codesign
     artifacts:
       - build/ios/iphoneos/*.app

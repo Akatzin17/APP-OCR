@@ -14,7 +14,13 @@ workflows:
         script: |
           flutter clean
           flutter pub get
-          # Forzamos a que configure únicamente el entorno de Debug sin requerir firmas
+          
+          # TRUCO: Creamos la carpeta y un archivo vacío temporal en la Mac de Codemagic
+          mkdir -p ios/Flutter
+          touch ios/Flutter/flutter_export_environment.sh
+          touch ios/Flutter/generated_xcode_build_settings.mgmt
+          
+          # Ahora Flutter actualizará estos archivos con las rutas de macOS sin que CocoaPods proteste
           flutter build ios --config-only --debug --no-codesign
       - name: Instalar dependencias nativas (Pod install)
         script: |

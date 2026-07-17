@@ -1,11 +1,6 @@
 platform :ios, '13.0'
 
-import_path = File.expand_path(File.join('..', 'Flutter', 'flutter_export_environment.sh'), __FILE__)
-if File.exist?(import_path)
-  # Solo cargamos si el archivo de verdad ya fue generado
-  require import_path
-end
-
+# Eliminamos la línea de import/require problematica del .sh
 project 'Runner', {
   'Debug' => :debug,
   'Profile' => :profile,
@@ -25,8 +20,7 @@ def flutter_root
   raise "FLUTTER_ROOT not found in generated_xcode_build_settings.mgmt"
 end
 
-# Aquí cargamos el helper nativo de Flutter de forma estricta
-# para que CocoaPods vea todas tus dependencias (ML Kit, etc.)
+# Cargamos el helper nativo de Flutter
 podhelper_path = File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
 unless File.exist?(podhelper_path)
   raise "podhelper.rb not found at #{podhelper_path}"
@@ -44,7 +38,7 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     
-    # Forzamos iOS 13.0 en todas las dependencias
+    # Aseguramos compatibilidad iOS 13.0 para ML Kit y tus librerías de permisos
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
     end

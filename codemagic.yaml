@@ -1,19 +1,20 @@
 workflows:
-  ios-release:
-    name: iOS Release
-
-    instance_type: mac_mini_m1
+  default-workflow:
+    name: Flujo de trabajo predeterminado
     max_build_duration: 60
-
+    instance_type: mac_mini_m1
     environment:
       flutter: stable
       xcode: latest
       cocoapods: default
-
+    triggering:
+      events: []
     scripts:
-      - flutter clean
-      - flutter pub get
-      - flutter build ipa --release
-
+      - name: Compilar Aplicación iOS (Debug)
+        script: |
+          flutter clean
+          flutter pub get
+          # Este comando genera los entornos de forma nativa en la Mac y ejecuta su propio 'pod install' internamente
+          flutter build ios --debug --no-codesign
     artifacts:
-      - build/ios/ipa/*.ipa
+      - build/ios/iphoneos/*.app

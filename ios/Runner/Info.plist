@@ -26,6 +26,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Necesitamos acceso a la cámara para escanear.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>La app necesita acceso a tus fotos para seleccionar imágenes y aplicar OCR</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

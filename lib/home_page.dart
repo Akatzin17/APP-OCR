@@ -9,7 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 /// Convierte la foto a escala de grises y le sube el contraste, para que
 /// el OCR detecte mejor tintas claras o de bajo contraste.
-Uint8List _convertToGrayscale(String path) {
+Uint8List convertToGrayscale(String path) {
   final bytes = File(path).readAsBytesSync();
   final original = img.decodeImage(bytes);
 
@@ -17,13 +17,12 @@ Uint8List _convertToGrayscale(String path) {
 
   final grayscale = img.grayscale(original);
   // El contraste es ajustable: si con algunas tintas sigue sin detectar
-  // bien, prueba subiendo este valor (ej. 1.5 o 1.7).
   final processed = img.adjustColor(
     grayscale,
     contrast: 1.4, // Ajusta el contraste para mejorar la detección de tintas
-    gamma:1.4, // Ajusta el gamma para mejorar la visibilidad (1.5 para oscurecer o < 1.0 para aclarar)
+    gamma: 1.4, // Ajusta el gamma para mejorar la visibilidad (1.5 para oscurecer o < 1.0 para aclarar)
     brightness: 1.0, // Ajusta el brillo si es necesario (-1.0 oscuro total, 0.0 sin cambio, 1.0 brillante total)
-  ); 
+  );
 
   return img.encodeJpg(processed, quality: 90);
 }
@@ -31,7 +30,7 @@ Uint8List _convertToGrayscale(String path) {
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.onScanResult});
   final Function(String text) onScanResult;
-
+  
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -39,6 +38,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isGranted = false;
   bool _isProcessing = false; // Evita doble-tap mientras se escanea
+  static bool _aplicarFiltro = false;
   late final Future<void> _future;
   CameraController? _cameraController;
   final textRecognizer = TextRecognizer();
@@ -47,9 +47,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    if (!_mensajeMostrado){
+    if (!_mensajeMostrado) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-      _DialogoInformativo();
+        _DialogoInformativo();
       });
       _mensajeMostrado = true;
     }
@@ -60,8 +60,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void _DialogoInformativo() {
     showDialog(
       context: context,
-      barrierDismissible:
-          false, // El usuario debe presionar un botón para cerrar el diálogo
+      barrierDismissible: false, // El usuario debe presionar un botón para cerrar el diálogo
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('USO DE RED WIFI'),
@@ -147,6 +146,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               Column(
                 children: [
                   Expanded(child: Container()),
+                  Container(
+                    color: Colors.black45,
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: CheckboxListTile(
+                      title: const Text(
+                        'Aplicar filtros',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      value: _aplicarFiltro,
+                      activeColor: const Color.fromRGBO(255, 120, 1, 1),
+                      checkColor: Colors.white,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      dense: true,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _aplicarFiltro = value ?? true;
+                        });  
+                      },
+                    ),
+                  ),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 30.0),
                     child: MaterialButton(
@@ -158,7 +177,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: Colors.black,
                               ),
                             )
                           : const Text(
@@ -213,8 +232,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Future<void> _selectedCamera(CameraDescription camera) async {
     _cameraController = CameraController(
       camera,
-      // ResolutionPreset.high es suficiente para que el OCR lea bien el
-      ResolutionPreset.high,
+      // ResolutionPreset.high/medium es suficiente para que el OCR lea bien el
+      ResolutionPreset.medium, 
       enableAudio: false,
     );
 
@@ -234,12 +253,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     XFile? picture;
     try {
+      await _cameraController!.setFocusMode(FocusMode.auto);
+      await _cameraController!.setExposureMode(ExposureMode.auto);
+      
       picture = await _cameraController!.takePicture();
 
-      // Procesamos la imagen (escala de grises + contraste) en un hilo
-      // separado, para que la app no se trabe mientras la convierte.
-      final processedBytes = await compute(_convertToGrayscale, picture.path);
-      await File(picture.path).writeAsBytes(processedBytes);
+      if (_aplicarFiltro) {
+        // Procesamos la imagen (escala de grises + contraste) en un hilo
+        // separado, para que la app no se trabe mientras la convierte.
+        final processedBytes = await compute(convertToGrayscale, picture.path);
+        await File(picture.path).writeAsBytes(processedBytes);
+      }
 
       final inputImage = InputImage.fromFile(File(picture.path));
 

@@ -90,7 +90,7 @@ class _ResultPageState extends State<ResultPage> {
           _horarioController.text = horarioExtraido;
         });
 
-        if (loteExtraido != _loteController.text) {
+        if (loteExtraido.isNotEmpty && loteExtraido != _loteController.text) {
           setState(() {
             _loteController.text = loteExtraido;
           });
@@ -104,16 +104,16 @@ class _ResultPageState extends State<ResultPage> {
       final loteExtraido = _usuarioEditando
           ? _extraerLote(texto)
           : _sanitizarLote(_extraerLote(texto)); // Solo sanitiza la primera vez
-      final horarioExtraido = _extraerHorario(texto);
-
+      final horarioExtraido = _extraerHorario(
+        texto,
+      ); // No sanitiza el horario, solo extrae
       // Reemplazar el lote crudo en el texto por el lote sanitizado
       if (loteExtraido.isNotEmpty) {
         final textoCorregido = _reemplazarLoteEnTexto(texto, loteExtraido);
 
         if (textoCorregido != texto) {
           _isUpdating = true;
-          final cursor = _textoCompletoController
-              .selection; // conserva posición del cursor
+          final cursor = _textoCompletoController.selection; // conserva posición del cursor
           _textoCompletoController.text = textoCorregido;
           _textoCompletoController.selection = cursor;
           _isUpdating = false;
@@ -162,10 +162,14 @@ class _ResultPageState extends State<ResultPage> {
 
   String _extraerHorario(String texto) {
     // Patrón más flexible: acepta I, l, L, 1 como separador además de ":"
-    final regex = RegExp(r'\b(\d{2}[:\|IilL1]\d{2})\b');
+    final regex = RegExp(r'\b([0-9OoIiLlSsBbZzGgTt]{2}[:\|IilL1]{1}[0-9OoIiLlSsBbZzGgTt]{2})\b');
     final match = regex.firstMatch(texto);
-    final raw = match?.group(1)?.trim() ?? '';
-    return _sanitizarHorario(raw); // <--
+
+    if (match == null) return '--:--';
+    final raw = match.group(1)?.trim() ?? '';
+    final sanitizado = _sanitizarHorario(raw);
+
+    return sanitizado.isEmpty ? '--:--' : sanitizado; // <--
   }
 
   /// Corrige confusiones OCR en los primeros 9 chars (deben ser números)
@@ -233,7 +237,7 @@ class _ResultPageState extends State<ResultPage> {
     // Si el ":" fue detectado como 1, i, l o L entre dos pares de dígitos, lo restauramos
     // Patrón: DD[1iIlL]DD → DD:DD
     return sanitized.replaceAllMapped(
-      RegExp(r'(\d{2})[1iIlL](\d{2})'),
+      RegExp(r'(\d{2})[1iIlL|](\d{2})'),
       (m) => '${m.group(1)}:${m.group(2)}',
     );
   }
@@ -274,6 +278,7 @@ class _ResultPageState extends State<ResultPage> {
         if (longitud > 1) {
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (BuildContext context) {
               return AlertDialog(
                 title: const Text('LOTE a ocupar'),
@@ -282,7 +287,7 @@ class _ResultPageState extends State<ResultPage> {
                     children: <Widget>[
                       for (var i = 0; i < longitud; i++)
                         ListTile(
-                          title: Text('SKU: ${data['data'][i] ['SKU']}'),
+                          title: Text('SKU: ${data['data'][i]['SKU']}'),
                           subtitle: Text(
                             'Descripción: ${data['data'][i]['Descripcion']}',
                           ),
@@ -304,7 +309,7 @@ class _ResultPageState extends State<ResultPage> {
               );
             },
           );
-        }else {
+        } else {
           setState(() {
             _skuController.text = data['data'][0]['SKU'].toString();
             _descripcionController.text = data['data'][0]['Descripcion'] ?? '';
@@ -505,7 +510,7 @@ class _ResultPageState extends State<ResultPage> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.access_time),
                     ),
-                    validator: (value) => value == null || value.isEmpty
+                    validator: (value) => value == null || value.isEmpty || value == '--:--'
                         ? 'Campo requerido'
                         : null,
                   ),
@@ -589,12 +594,7 @@ class _ResultPageState extends State<ResultPage> {
                           label: const Text('Guardar'),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            backgroundColor: const Color.fromRGBO(
-                              255,
-                              120,
-                              1,
-                              1,
-                            ),
+                            backgroundColor: const Color.fromRGBO(255, 120, 1, 1),
                             foregroundColor: Colors.white,
                           ),
                         ),
@@ -608,12 +608,7 @@ class _ResultPageState extends State<ResultPage> {
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             backgroundColor: Colors.white,
-                            foregroundColor: const Color.fromRGBO(
-                              255,
-                              120,
-                              1,
-                              1,
-                            ),
+                            foregroundColor: const Color.fromRGBO(255, 120, 1, 1),
                           ),
                         ),
                       ),

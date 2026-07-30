@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'result_page.dart';
-// import 'historial_page.dart';
+import 'galeria_page.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,7 +17,7 @@ class _MainScreenState extends State<MainScreen> {
   void _onScanResult(String texto) {
     setState(() {
       _textoEscaneado = texto;
-      _selectedIndex = 1;
+      _selectedIndex = 2;
     });
   }
 
@@ -25,8 +25,8 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final pages = [
       HomePage(onScanResult: _onScanResult), // índice 0 → Escaneo
-      ResultPage(text: _textoEscaneado), // índice 1 → Formulario
-      //HistorialPage(),                       // índice 2 → Historial
+      OcrGaleriaPage(onScanResult: _onScanResult), // índice 1 → Galería
+      ResultPage(text: _textoEscaneado), // índice 2 → Formulario
     ];
 
     return Scaffold(
@@ -49,13 +49,13 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Escaneo',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.photo_library),
+            label: 'Subir Imagen',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.assignment),
             label: 'Formulario',
           ),
-          /*BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Historial',
-          ),*/
         ],
       ),
     );
